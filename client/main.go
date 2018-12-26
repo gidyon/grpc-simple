@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"log"
+	"os"
 
 	pb "github.com/gidyon/microservices/grpc/hello"
 	"google.golang.org/grpc"
@@ -23,7 +25,17 @@ func main() {
 	}
 	client := pb.NewHelloServiceClient(conn)
 
-	reply, err := client.SayHello(context.Background(), &pb.HelloRequest{Name: *name, Message: *message})
+	log.Println("Client object ready 😸")
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		r := bufio.NewReader(os.Stdin)
+		r.Read(make([]byte, 1))
+		cancel()
+	}()
+
+	reply, err := client.SayHello(ctx, &pb.HelloRequest{Name: *name, Message: *message})
 	if err != nil {
 		log.Fatalf("could not get proper response: %v", err)
 	}
