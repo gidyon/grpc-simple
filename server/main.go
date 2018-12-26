@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc"
 
@@ -14,8 +18,19 @@ import (
 type helloServer struct{}
 
 func (hs *helloServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	reply := &pb.HelloResponse{Reply: fmt.Sprintf("Hello %q, we have received your message", req.Name)}
-	return reply, nil
+	var (
+		reply = &pb.HelloResponse{}
+		err   error
+	)
+
+	select {
+	case <-ctx.Done():
+		err = status.Errorf(codes.Canceled, "operation was aborted: %v", err)
+	case <-time.After(3 * time.Second):
+		reply.Reply = fmt.Sprintf("Hello %q, we have received your message", req.Name)
+	}
+
+	return reply, err
 }
 
 func main() {
